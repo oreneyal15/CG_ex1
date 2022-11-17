@@ -87,11 +87,25 @@ public class CharacterAnimator : MonoBehaviour
     {
         // Your code here
         Matrix4x4 S = Matrix4x4.identity;
-        Dictionary<int, Matrix4x4> rotation_matricies = new Dictionary<int, Matrix4x4>();
-        rotation_matricies.Add(0, MatrixUtils.RotateX(currFrameData[joint.rotationChannels.x]));
-        rotation_matricies.Add(1, MatrixUtils.RotateY(currFrameData[joint.rotationChannels.y]));
-        rotation_matricies.Add(2, MatrixUtils.RotateZ(currFrameData[joint.rotationChannels.z]));
-        Matrix4x4 R = rotation_matricies[joint.rotationOrder.x] * rotation_matricies[joint.rotationOrder.y] * rotation_matricies[joint.rotationOrder.z];
+        Matrix4x4 R = Matrix4x4.identity;
+        if (!joint.isEndSite)
+        {
+            Vector3 curAngel = new Vector3(currFrameData[joint.rotationChannels.x],
+                currFrameData[joint.rotationChannels.y],
+                currFrameData[joint.rotationChannels.z]);
+            Vector3 nextAngel = new Vector3(nextFrameData[joint.rotationChannels.x],
+                nextFrameData[joint.rotationChannels.y],
+                nextFrameData[joint.rotationChannels.z]);
+            var q1 = QuaternionUtils.FromEuler(curAngel, joint.rotationOrder);
+            var q2 = QuaternionUtils.FromEuler(nextAngel, joint.rotationOrder);
+            var q = interpolate ? QuaternionUtils.Slerp(q1, q2, t) : q1;
+            R = MatrixUtils.RotateFromQuaternion(q);
+        }
+        //Dictionary<int, Matrix4x4> rotation_matricies = new Dictionary<int, Matrix4x4>();
+        //rotation_matricies.Add(0, MatrixUtils.RotateX(currFrameData[joint.rotationChannels.x]));
+        //rotation_matricies.Add(1, MatrixUtils.RotateY(currFrameData[joint.rotationChannels.y]));
+        //rotation_matricies.Add(2, MatrixUtils.RotateZ(currFrameData[joint.rotationChannels.z]));
+        //Matrix4x4 R = rotation_matricies[joint.rotationOrder.x] * rotation_matricies[joint.rotationOrder.y] * rotation_matricies[joint.rotationOrder.z];
         Matrix4x4 T = MatrixUtils.Translate(joint.offset);
         Matrix4x4 m_tag = parentTransform * T * R * S;
         MatrixUtils.ApplyTransform(joint.gameObject, m_tag);
@@ -116,7 +130,8 @@ public class CharacterAnimator : MonoBehaviour
     public float GetFrameIntervalTime(float time)
     {
         // Your code here
-        return 0;
+        var numOfFrames = (int) (time / data.frameLength);
+        return (time - numOfFrames * data.frameLength) / data.frameLength;
     }
 
     // Update is called once per frame
@@ -127,10 +142,21 @@ public class CharacterAnimator : MonoBehaviour
         {
             int currFrame = GetFrameNumber(time);
             // Your code here
+            
+            t = interpolate ? GetFrameIntervalTime(time) : 0;
             currFrameData = data.keyframes[currFrame];
-            Vector3 hipPos = new Vector3(currFrameData[data.rootJoint.positionChannels.x],
+            if (currFrame != data.numFrames - 1)
+            {
+                nextFrameData = data.keyframes[currFrame + 1];
+            }
+
+            var curHipPos = new Vector3(currFrameData[data.rootJoint.positionChannels.x],
                 currFrameData[data.rootJoint.positionChannels.y], currFrameData[data.rootJoint.positionChannels.z]);
+            var nextHipPos = new Vector3(nextFrameData[data.rootJoint.positionChannels.x],
+                nextFrameData[data.rootJoint.positionChannels.y], nextFrameData[data.rootJoint.positionChannels.z]);
+            Vector3 hipPos = Vector3.Lerp(curHipPos, nextHipPos, t);
             TransformJoint(data.rootJoint, MatrixUtils.Translate(hipPos));
+            
         }
     }
 }
