@@ -86,7 +86,6 @@ public class CharacterAnimator : MonoBehaviour
     public void TransformJoint(BVHJoint joint, Matrix4x4 parentTransform)
     {
         // Your code here
-        Matrix4x4 S = Matrix4x4.identity;
         Matrix4x4 R = Matrix4x4.identity;
         if (!joint.isEndSite)
         {
@@ -100,20 +99,22 @@ public class CharacterAnimator : MonoBehaviour
             var q2 = QuaternionUtils.FromEuler(nextAngel, joint.rotationOrder);
             var q = interpolate ? QuaternionUtils.Slerp(q1, q2, t) : q1;
             R = MatrixUtils.RotateFromQuaternion(q);
+            
+            //Dictionary<int, Matrix4x4> rotation_matricies = new Dictionary<int, Matrix4x4>();
+            //rotation_matricies.Add(joint.rotationOrder.x, MatrixUtils.RotateX(currFrameData[joint.rotationChannels.x]));
+            //rotation_matricies.Add(joint.rotationOrder.y, MatrixUtils.RotateY(currFrameData[joint.rotationChannels.y]));
+            //rotation_matricies.Add(joint.rotationOrder.z, MatrixUtils.RotateZ(currFrameData[joint.rotationChannels.z]));
+            //Matrix4x4 R = rotation_matricies[0] * rotation_matricies[1] * rotation_matricies[2];
         }
-        //Dictionary<int, Matrix4x4> rotation_matricies = new Dictionary<int, Matrix4x4>();
-        //rotation_matricies.Add(0, MatrixUtils.RotateX(currFrameData[joint.rotationChannels.x]));
-        //rotation_matricies.Add(1, MatrixUtils.RotateY(currFrameData[joint.rotationChannels.y]));
-        //rotation_matricies.Add(2, MatrixUtils.RotateZ(currFrameData[joint.rotationChannels.z]));
-        //Matrix4x4 R = rotation_matricies[joint.rotationOrder.x] * rotation_matricies[joint.rotationOrder.y] * rotation_matricies[joint.rotationOrder.z];
+        
         Matrix4x4 T = MatrixUtils.Translate(joint.offset);
-        Matrix4x4 m_tag = parentTransform * T * R * S;
+        Matrix4x4 m_tag = parentTransform * T * R;
         MatrixUtils.ApplyTransform(joint.gameObject, m_tag);
         if (!joint.isEndSite)
         {
             foreach (BVHJoint child in joint.children)
             {
-                TransformJoint(child, m_tag); //todo: check if it what we needed to do
+                TransformJoint(child, m_tag);
             }
         }
     }

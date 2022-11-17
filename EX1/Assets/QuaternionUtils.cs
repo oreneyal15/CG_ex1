@@ -60,7 +60,7 @@ public class QuaternionUtils
         q2 = q2.normalized;
         var w = Multiply(q1, Conjugate(q2)).w;
         w = Mathf.Clamp(w, -1f, 1f);
-        var theta = 2 * Mathf.Acos(w); // in radians or deg
+        var theta = 2 * Mathf.Acos(w);
         if (Mathf.Sin(theta) == 0)
         {
             return q1;
